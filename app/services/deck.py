@@ -1,13 +1,20 @@
-import json, random
+# app/services/deck.py
+from __future__ import annotations
+
+import json
+import random
+import hashlib
 from pathlib import Path
 from dataclasses import dataclass
 from typing import List, Tuple
+
 
 @dataclass(frozen=True)
 class Card:
     name: str
     meaning_up: str
     meaning_rev: str
+
 
 class TarotDeck:
     def __init__(self, path: str):
@@ -16,14 +23,32 @@ class TarotDeck:
         if p.exists() and p.stat().st_size > 10:
             data = json.loads(p.read_text(encoding="utf-8"))
             for it in data:
-                self.cards.append(Card(it["name"], it["meaning_up"], it["meaning_rev"]))
+                self.cards.append(
+                    Card(
+                        name=it["name"],
+                        meaning_up=it["meaning_up"],
+                        meaning_rev=it["meaning_rev"],
+                    )
+                )
         else:
-            # Фолбек: повна колода 78 карт (короткі значення)
+            # Фолбек: повна колода 78 карт (стислі значення)
             self.cards = _BUILTIN_78
 
     def draw(self, n: int, allow_reversed: bool = True) -> List[Tuple[Card, bool]]:
         picks = random.sample(self.cards, k=n)
         return [(c, bool(random.getrandbits(1)) if allow_reversed else False) for c in picks]
+
+    def daily_card(self, user_id: int, day_key: str) -> Tuple[Card, bool]:
+        """
+        Детермінована «карта дня» для користувача на певну дату (локальну).
+        day_key: 'YYYY-MM-DD'
+        """
+        seed = f"{user_id}-{day_key}".encode("utf-8")
+        h = hashlib.sha256(seed).digest()
+        idx = int.from_bytes(h[:4], "big") % len(self.cards)
+        rev = bool(h[4] & 1)  # стабільна «перевернутість»
+        return self.cards[idx], rev
+
 
 # --- мінімальні значення (UA), 78 карт ---
 _BUILTIN_78: List[Card] = [
