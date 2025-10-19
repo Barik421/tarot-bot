@@ -1,7 +1,7 @@
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from app.services.deck import TarotDeck
-from app.services.spreads import format_general, format_love
+from app.services.spreads import format_general, format_love, format_daily
 from app.keyboards import main_menu
 from app.config import settings
 from app.services.ads import pick_ad
@@ -24,14 +24,31 @@ async def maybe_ad(message: Message):
         ad = await pick_ad(s)
     if not ad:
         return
-    if ad.image_url:
-        await message.answer_photo(ad.image_url, caption=f"📣 *Партнерський матеріал*\n{ad.text}", parse_mode="Markdown")
-    else:
-        await message.answer(f"📣 *Партнерський матеріал*\n{ad.text}", parse_mode="Markdown")
+    kb = None
     if ad.button_text and ad.button_url:
-        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=ad.button_text, url=ad.button_url)]])
-        await message.answer("➡️", reply_markup=kb)
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text=ad.button_text, url=ad.button_url)]]
+        )
+    if ad.image_url:
+        await message.answer_photo(
+            ad.image_url,
+            caption=f"📣 *Партнерський матеріал*\n{ad.text}",
+            parse_mode="Markdown",
+            reply_markup=kb,
+        )
+    else:
+        await message.answer(
+            f"📣 *Партнерський матеріал*\n{ad.text}",
+            parse_mode="Markdown",
+            reply_markup=kb,
+        )
+
+@router.callback_query(F.data == "daily")
+async def cb_daily(cb: CallbackQuery):
+    card, rev = _deck.draw(1, allow_reversed=True)[0]
+    await cb.message.answer(format_daily(card, rev), parse_mode="Markdown")
+    await maybe_ad(cb.message)
+    await cb.answer()
 
 @router.callback_query(F.data == "general")
 async def cb_general(cb: CallbackQuery):
