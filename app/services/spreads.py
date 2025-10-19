@@ -7,7 +7,7 @@ def format_general(pulls: List[Tuple[Card, bool]]) -> str:
     for (card, rev), pos in zip(pulls, positions):
         lines.append(
             f"• *{pos}:* {card.name} {'(перевернута)' if rev else ''}\n"
-            f"  _Значення:_ {card.mean_rev if rev else card.mean_up}"
+            f"  _Значення:_ {card.meaning_rev if rev else card.meaning_up}"
         )
     return "\n".join(lines)
 
@@ -17,12 +17,12 @@ def format_love(pulls: List[Tuple[Card, bool]]) -> str:
     for (card, rev), pos in zip(pulls, positions):
         lines.append(
             f"• *{pos}:* {card.name} {'(перевернута)' if rev else ''}\n"
-            f"  _Значення:_ {card.mean_rev if rev else card.mean_up}"
+            f"  _Значення:_ {card.meaning_rev if rev else card.meaning_up}"
         )
     return "\n".join(lines)
 
 def format_daily(card: Card, rev: bool) -> str:
     return (
         f"🗓️ *Карта дня:* {card.name} {'(перевернута)' if rev else ''}\n"
-        f"_Підказка:_ {card.mean_rev if rev else card.mean_up}"
+        f"_Підказка:_ {card.meaning_rev if rev else card.meaning_up}"
     )
